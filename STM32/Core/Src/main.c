@@ -109,11 +109,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_ADC_Start(&hadc1);
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_UART_Receive_IT (&huart2 , &temp , 1) ;
+  HAL_ADC_Start(&hadc1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  HAL_UART_Receive_IT (&huart2 , &temp , 1) ;
   setTimer1(10);
   while (1)
   {
@@ -323,24 +324,25 @@ void HAL_TIM_PeriodElapsedCallback ( TIM_HandleTypeDef * htim ){
 	timerRun();
 }
  void uart_communication_fsm (){
-	  switch(status_uart){
-	  case UART_INIT:
+	 switch(status_uart){
+	 	 case UART_INIT:
+	 		 break;
+	 	 case UART_SEND:
+	 		 if(timer1_flag==1){
+	 			 ADC_value = HAL_ADC_GetValue(&hadc1);
+	 			 HAL_UART_Transmit(&huart2, (void*)str, sprintf(str, "\r\n!%ld#\r\n",ADC_value), 1000);
+	 			 HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+	 			 setTimer1(3000);
+	 		 }
+	 		 break;
+	 	 case UART_END:
+	 		 HAL_UART_Transmit(&huart2, (void*)str, sprintf(str, "\r\n%s\r\n","END"), 1000);
+	 		 status_uart = UART_INIT;
+	 		 break;
+	 	 default:
 		  break;
-	  case UART_SEND:
-		  if(timer1_flag==1){
-		  		HAL_UART_Transmit(&huart2, (void*)str, sprintf(str, "\r\n!%ld#\r\n",ADC_value), 1000);
-		  		HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-		  		setTimer1(3000);
-		  }
-		  break;
-	  case UART_END:
-		  HAL_UART_Transmit(&huart2, (void*)str, sprintf(str, "\r\n%s\r\n","END"), 1000);
-		  status_uart = UART_INIT;
-		  break;
-	  default:
-		  break;
-	  }
-  }
+	 }
+ }
 /* USER CODE END 4 */
 
 /**
